@@ -1,15 +1,11 @@
 from os import environ
 import logging
 import time
-import typing
 from opentelemetry import trace
 from opentelemetry.trace.status import Status, StatusCode
-from opentelemetry.exporter.kafka.json import KafkaExporter
+from opentelemetry.exporter.kafka.json import KafkaExporter, StartEndSpanExporter
 from opentelemetry.sdk.trace import TracerProvider, Span
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.context import Context, attach, detach, set_value
-from opentelemetry.instrumentation.utils import _SUPPRESS_INSTRUMENTATION_KEY
 
 # logger.setLevel(logging.DEBUG)
 
@@ -26,9 +22,10 @@ tracer = trace.get_tracer(__name__)
 
 # create a ZipkinExporter
 kafka_exporter = KafkaExporter(
+    # kafkatopic="<KAFKA Topic to send tracing to",
+    # kafkanodes=[<list of Kafka Nodes>],
     # version=Protocol.V2
     # optional:
-    # endpoint="http://localhost:9411/api/v2/spans",
     # local_node_ipv4="192.168.0.1",
     # local_node_ipv6="2001:db8::c001",
     # local_node_port=31313,
@@ -36,19 +33,6 @@ kafka_exporter = KafkaExporter(
     # timeout=5 (in seconds)
 )
 
-class StartEndSpanExporter(SimpleSpanProcessor):
-    def on_start(
-        self, span: Span, parent_context: typing.Optional[Context] = None
-    ) -> None:
-        if not span.context.trace_flags.sampled:
-            return
-        token = attach(set_value(_SUPPRESS_INSTRUMENTATION_KEY, True))
-        try:
-            self.span_exporter.export((span,))
-        # pylint: disable=broad-except
-        except Exception:
-            logger.exception("Exception while exporting Span Start.")
-        detach(token)
 
 
 # Create a BatchSpanProcessor and add the exporter to it

@@ -73,7 +73,6 @@ import logging
 from os import environ
 from typing import Optional, Sequence
 import socket
-import requests
 
 from opentelemetry.exporter.kafka.encoder import (
     DEFAULT_MAX_TAG_VALUE_LENGTH,
@@ -88,10 +87,14 @@ from opentelemetry.exporter.kafka.node_endpoint import IpInput, NodeEndpoint
 # )
 from opentelemetry.sdk.resources import SERVICE_NAME
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.trace import (
     Span,
     format_trace_id,
 )
+from opentelemetry.context import Context, attach, detach, set_value
+from opentelemetry.instrumentation.utils import _SUPPRESS_INSTRUMENTATION_KEY
+
 from confluent_kafka import Producer
 
 DEFAULT_ENDPOINT = "http://localhost:9411/api/v2/spans"
@@ -103,6 +106,21 @@ OTEL_EXPORTER_KAFKA_TOPIC="OTEL_EXPORTER_KAFKA_TOPIC"
 OTEL_EXPORTER_KAFKA_NODES="OTEL_EXPORTER_KAFKA_NODES"
 
 logger = logging.getLogger(__name__)
+
+class StartEndSpanExporter(SimpleSpanProcessor):
+    def on_start(
+        self, span: Span, parent_context: Optional[Context] = None
+    ) -> None:
+        if not span.context.trace_flags.sampled:
+            return
+        token = attach(set_value(_SUPPRESS_INSTRUMENTATION_KEY, True))
+        try:
+            self.span_exporter.export((span,))
+        # pylint: disable=broad-except
+        except Exception:
+            logger.exception("Exception while exporting Span Start.")
+        detach(token)
+
 
 
 class KafkaExporter(SpanExporter):
