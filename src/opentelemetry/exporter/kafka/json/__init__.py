@@ -73,18 +73,12 @@ import logging
 from os import environ
 from typing import Optional, Sequence
 import socket
-
 from opentelemetry.exporter.kafka.encoder import (
     DEFAULT_MAX_TAG_VALUE_LENGTH,
-    Encoder,
     Protocol,
 )
 from opentelemetry.exporter.kafka.json.v1 import JsonV1Encoder
 from opentelemetry.exporter.kafka.node_endpoint import IpInput, NodeEndpoint
-# from opentelemetry.sdk.environment_variables import (
-#     OTEL_EXPORTER_ZIPKIN_ENDPOINT,
-#     OTEL_EXPORTER_ZIPKIN_TIMEOUT,
-# )
 from opentelemetry.sdk.resources import SERVICE_NAME
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor

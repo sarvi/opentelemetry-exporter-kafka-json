@@ -4,7 +4,7 @@ import time
 from opentelemetry import trace
 from opentelemetry.trace.status import Status, StatusCode
 from opentelemetry.exporter.kafka.json import KafkaExporter, StartEndSpanExporter
-from opentelemetry.sdk.trace import TracerProvider, Span
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import Resource
 
 # logger.setLevel(logging.DEBUG)
@@ -13,12 +13,12 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-resource = Resource.create(attributes={
+resource = Resource.create(
+    attributes={
         "service.name": '.'.join(["com.cisco.devx", 'synthrunner']),
     })
 
-trace.set_tracer_provider(TracerProvider(resource=resource))
-tracer = trace.get_tracer(__name__)
+traceprovider = TracerProvider(resource=resource)
 
 # create a ZipkinExporter
 kafka_exporter = KafkaExporter(
@@ -33,13 +33,15 @@ kafka_exporter = KafkaExporter(
     # timeout=5 (in seconds)
 )
 
-
-
 # Create a BatchSpanProcessor and add the exporter to it
 span_processor = StartEndSpanExporter(kafka_exporter)
 
-# add to the tracer
-trace.get_tracer_provider().add_span_processor(span_processor)
+traceprovider.add_span_processor(span_processor)
+
+trace.set_tracer_provider(traceprovider)
+
+tracer = trace.get_tracer(__name__)
+
 testedservice='A'
 testedmicroservice='B'
 method='C'
