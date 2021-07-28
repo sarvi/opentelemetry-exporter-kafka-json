@@ -277,8 +277,8 @@ class JsonEncoder(Encoder):
             "startTime": encoded_span['start_time'],
             "endTime": encoded_span.get('end_time', None),
             "dataKey": '{}.{}'.format(
-                encoded_span['context']['trace_id'],  # str(uuid.uuid4()),
-                encoded_span['context']['span_id']),
+                encoded_span['trace_id'],  # str(uuid.uuid4()),
+                encoded_span['span_id']),
             "data": encoded_span
         }
         # encoded_spans = []
@@ -286,18 +286,21 @@ class JsonEncoder(Encoder):
         #     encoded_spans.append(
         #         self._encode_span(span, encoded_local_endpoint)
         #     )
-        logger.debug('{}'.format(pprint.pformat(trace_data)))
+        logger.debug('\n{}'.format(pprint.pformat(trace_data)))
         return json.dumps(trace_data)
 
     @staticmethod
     def _encode_local_endpoint(local_endpoint: NodeEndpoint) -> Dict:
-        encoded_local_endpoint = {"serviceName": local_endpoint.service_name}
+        encoded_local_endpoint = {
+            "service.name": local_endpoint.service_name,
+            "service.namespace": local_endpoint.service_namespace
+            }
         if local_endpoint.ipv4 is not None:
-            encoded_local_endpoint["ipv4"] = str(local_endpoint.ipv4)
-        if local_endpoint.ipv6 is not None:
-            encoded_local_endpoint["ipv6"] = str(local_endpoint.ipv6)
-        if local_endpoint.port is not None:
-            encoded_local_endpoint["port"] = local_endpoint.port
+            encoded_local_endpoint["net.host.ip"] = str(local_endpoint.ipv4)
+        # if local_endpoint.ipv6 is not None:
+        #     encoded_local_endpoint["ipv6"] = str(local_endpoint.ipv6)
+        # if local_endpoint.port is not None:
+        #     encoded_local_endpoint["port"] = local_endpoint.port
         return encoded_local_endpoint
 
     @staticmethod

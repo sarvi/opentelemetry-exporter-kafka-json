@@ -39,33 +39,50 @@ class JsonV1Encoder(JsonEncoder):
     def _encode_span(self, span: Span, encoded_local_endpoint: Dict) -> Dict:
         context = span.get_span_context()
         # import pdb; pdb.set_trace()
+        # 'name': f"{tested_service_namespace}.{tested_service_name}/{tested_service_method}",
+        # 'trace_id': TRACE_ID,
+        # 'span_id': span_id,
+        # 'trace_state': {},
+        # "parent_id": None, # OPTIONAL. defaults to null
+        # "kind": "SpanKind.CLIENT",
+        # "start_time": int(round(time.time() * 1000)),
+        # "end_time": None,
+        # 'status.code': 'UNSET',
+        # 'status.value': 0,
+        # "service.name": synth_service_name,
+        # 'service.namespace': synth_service_namespace,
+        # "host.name": socket.getfqdn().split('.')[0],
+        # 'deployment.environment': os.environ.get('INSTALLTYPE', 'staging'),
+        # "peer.service.namespace": f"{tested_service_namespace}",
+        # "peer.service.name": f"{tested_service_name}",
+        # "peer.service.method": f"{tested_service_method}",
+        # 'enduser.id': os.environ.get('USER', 'ngdevx'),
+        # 'location.site': os.environ.get('SITE', 'unknown')
         encoded_span = {
+            "name": span.name,
             # "traceId": self._encode_trace_id(context.trace_id),
             # "id": self._encode_span_id(context.span_id),
-            'context': {
-                'trace_id': self._encode_trace_id(context.trace_id),
-                'span_id': self._encode_span_id(context.span_id),
-                'trace_state': context.trace_state._dict,
-            },
+            'trace_id': self._encode_trace_id(context.trace_id),
+            'span_id': self._encode_span_id(context.span_id),
+            'trace_state': dict(context.trace_state._dict),
             'parent_id': self._encode_span_id(span.parent.span_id) if span.parent else None, 
-            'status': {
-                'status_code': span.status.status_code.name,
-                'status_value': span.status.status_code.value,
-            },
-            'attributes': {
-                'enduser.id': getpass.getuser(),
-                'location.site': environ.get('SITE', 'unknown')
-            },
-            "name": span.name,
+            'status.code': span.status.status_code.name,
+            'status.value': span.status.status_code.value,
+            'location.site': environ.get('SITE', 'unknown'),
             "timestamp": self._nsec_to_usec_round(span.start_time),
             "start_time": self._nsec_to_usec_round(span.start_time),
+            'enduser.id': getpass.getuser(),
+            'location.site': environ.get('SITE', 'unknown'),
+            'deployment.environment': environ.get('INSTALLTYPE', 'staging'),
             # "end_time": self._nsec_to_usec_round(span.end_time),
             # "duration": self._nsec_to_usec_round(
             #     span.end_time - span.start_time
             # ),
-            "localEndpoint": encoded_local_endpoint,
+            # "localEndpoint": encoded_local_endpoint,
             "kind": 'SpanKind.{}'.format(self.SPAN_KIND_MAP[span.kind]),
         }
+        encoded_span.update(encoded_local_endpoint)
+
         if span.end_time:
             encoded_span["end_time"] = self._nsec_to_usec_round(span.end_time)
             encoded_span["duration"] = self._nsec_to_usec_round(
@@ -74,15 +91,15 @@ class JsonV1Encoder(JsonEncoder):
 
         tags = self._extract_tags_from_span(span)
         if tags:
-            encoded_span["tags"] = tags
+            encoded_span.update(tags)
 
         annotations = self._extract_annotations_from_events(span.events)
         if annotations:
             encoded_span["annotations"] = annotations
 
-        debug = self._encode_debug(context)
-        if debug:
-            encoded_span["debug"] = debug
+        # debug = self._encode_debug(context)
+        # if debug:
+        #     encoded_span["debug"] = debug
 
         parent_id = self._get_parent_id(span.parent)
         if parent_id is not None:
@@ -90,6 +107,6 @@ class JsonV1Encoder(JsonEncoder):
 
         attributes = self._extract_tags_from_dict(span.attributes)
         if attributes:
-            encoded_span["attributes"].update(attributes)
+            encoded_span.update(attributes)
 
         return encoded_span

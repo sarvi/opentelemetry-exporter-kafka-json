@@ -18,7 +18,7 @@ import ipaddress
 from typing import Optional, Union
 
 from opentelemetry import trace
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_NAMESPACE, Resource
 
 IpInput = Union[str, int, None]
 
@@ -51,6 +51,7 @@ class NodeEndpoint:
             resource = Resource.create()
 
         self.service_name = resource.attributes[SERVICE_NAME]
+        self.service_namespace = resource.attributes[SERVICE_NAMESPACE]
 
     @property
     def ipv4(self) -> Optional[ipaddress.IPv4Address]:

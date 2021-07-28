@@ -15,10 +15,12 @@ logger = logging.getLogger(__name__)
 
 resource = Resource.create(
     attributes={
-        "service.name": '.'.join(["com.cisco.devx", 'synthrunner']),
+        "service.name": 'cli_synthrunner',
+        "service.namespace": 'com.cisco.devx.synthrunner',
     })
 
 traceprovider = TracerProvider(resource=resource)
+trace.set_tracer_provider(traceprovider)
 
 # create a ZipkinExporter
 kafka_exporter = KafkaExporter(
@@ -38,21 +40,18 @@ span_processor = StartEndSpanExporter(kafka_exporter)
 
 traceprovider.add_span_processor(span_processor)
 
-trace.set_tracer_provider(traceprovider)
-
 tracer = trace.get_tracer(__name__)
 
-testedservice='A'
-testedmicroservice='B'
-method='C'
+tested_service_namespace='com.cisco.devx.wit'
+tested_service_name='cli_wit'
+tested_service_method='cli/wit/space/create'
 
 
-with tracer.start_as_current_span("com.cisco.devx.wit.cli_wit/cli/wit/space/create", kind=trace.SpanKind.CLIENT) as span:
+with tracer.start_as_current_span(f"{tested_service_namespace}.{tested_service_name}{tested_service_method}", kind=trace.SpanKind.CLIENT) as span:
     span.set_attributes({
-        "peer.servicegroup": f"{testedservice}",
-        "peer.service": f"{testedservice}.{testedmicroservice}",
-        "peer.endpoint": f"{method}",
-        'enduser.id': environ.get('USER', 'ngdevx'),
+        "peer.service.namespace": f"{tested_service_namespace}",
+        "peer.service.name": f"{tested_service_name}",
+        "peer.service.method": f"{tested_service_method}",
         'location.site': environ.get('SITE', 'unknown')
     })
     print("Hello world!")
