@@ -150,7 +150,8 @@ class KafkaExporter(SpanExporter):
             local_node_ipv4 = socket.gethostbyname(socket.gethostname())
         if not local_node_ipv6:
             try:
-                local_node_ipv6 = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET6)
+                local_node_ipv6 = socket.getaddrinfo(socket.gethostname(), 0, socket.AF_INET6)
+                local_node_ipv6 = local_node_ipv6[0][4][0]
             except socket.gaierror:
                 pass
         self.local_node = NodeEndpoint(
