@@ -87,7 +87,7 @@ class JsonV1Encoder(JsonEncoder):
             encoded_span["end_time"] = self._nsec_to_usec_round(span.end_time)
             encoded_span["duration"] = self._nsec_to_usec_round(
                 span.end_time - span.start_time
-            ),
+            )
 
         tags = self._extract_tags_from_span(span)
         if tags:
