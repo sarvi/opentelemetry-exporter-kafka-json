@@ -72,7 +72,6 @@ class JsonV1Encoder(JsonEncoder):
             "timestamp": self._nsec_to_usec_round(span.start_time),
             "start_time": self._nsec_to_usec_round(span.start_time),
             'enduser.id': getpass.getuser(),
-            'location.site': environ.get('SITE', 'unknown'),
             'deployment.environment': environ.get('INSTALLTYPE', 'staging'),
             # "end_time": self._nsec_to_usec_round(span.end_time),
             # "duration": self._nsec_to_usec_round(
@@ -103,7 +102,7 @@ class JsonV1Encoder(JsonEncoder):
 
         parent_id = self._get_parent_id(span.parent)
         if parent_id is not None:
-            encoded_span["parentId"] = self._encode_span_id(parent_id)
+            encoded_span["parent_id"] = self._encode_span_id(parent_id)
 
         attributes = self._extract_tags_from_dict(span.attributes)
         if attributes:
