@@ -172,6 +172,7 @@ class KafkaExporter(SpanExporter):
         if version == Protocol.V1:
             self.encoder = JsonV1Encoder(max_tag_value_length)
         self._closed = False
+        self.timeout = timeout
 
     def export(self, spans: Sequence[Span]) -> SpanExportResult:
         # After the call to Shutdown subsequent calls to Export are
@@ -201,7 +202,7 @@ class KafkaExporter(SpanExporter):
             logger.debug("Sending telemetry to {} on {}\n{}".format(self.kafkatopic, self.kafkanodes, data))
             producer = Producer({'bootstrap.servers': ','.join(self.kafkanodes)})
             rv = rv or producer.produce(self.kafkatopic, key=format_trace_id(context.trace_id), value=data)
-            producer.flush()
+            producer.flush(timeout=self.timeout)
 
         if rv is not None:
             logger.error("Traces cannot be uploaded; status code: %s", rv)
